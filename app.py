@@ -153,7 +153,7 @@ class App(customtkinter.CTk):
         self.answers.grid_forget()
         self.answers.destroy()
         self.answers = None
-        self.show_question(f'The perfect romance movie for you is "{result}"')
+        self.show_question(f'You should binge-watch: "{result}"')
         self.finished = True
 
     def show_question(self, question):
