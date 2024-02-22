@@ -16,13 +16,18 @@ class ExpertSystem:
     def set_answer(self, answer_string):
         self.env.assert_string("(odpowiedz \"" + answer_string + "\")")
 
-    def go_to_question(self, fact_string):
-        facts = self.get_facts()
-
-        self.env.assert_string(f'(pytanie {fact_string})')
-
-        for fact in facts:
-          fact.retract()
+    def go_to_question(self, question):
+        for fact in reversed(list(self.env.facts())):
+            if "wynik" in str(fact):
+                fact.retract()
+                continue
+            if "pytanie" in str(fact):
+                fact.retract()
+                continue
+            if "odpowiedz" in str(fact):
+                fact.retract()
+                break
+        self.env.assert_string(f'(pytanie {question})')
 
     def run(self):
         self.env.run()
@@ -71,10 +76,11 @@ class App(customtkinter.CTk):
                 master=self, command=self.next_button_callback, text="Next")
             self.next_button.grid(
                 row=3, column=2, padx=20, pady=20, sticky="ew")
+        elif not self.finished:
+            self.next_button.configure(text="Next", command=self.next_button_callback)
         else:
-            self.next_button.configure(
-                text="Next", command=self.next_button_callback)
-
+            self.next_button.configure(text="Next", command=self.next_button_callback)
+        
     def load_previous_button(self):
         if self.previous_button is None:
             self.previous_button = customtkinter.CTkButton(
@@ -123,24 +129,22 @@ class App(customtkinter.CTk):
 
     def previous_button_callback(self):
         question = self.questions_history[-1]
-
         self.questions_history.pop()
-
         if self.finished:
             self.finished = False
+            self.next_button.configure(text="Next", command=self.next_button_callback)
             self.setup_controls()
-
         self.env.go_to_question(question)
-
         self.load_expert_system_data()
 
     def next_button_callback(self):
         answers = ' '.join([f'"{x}"' for x in self.answers_list])
 
         self.questions_history.append(f'"{self.question_string}" {answers}')
-        self.env.set_answer(self.answers_list[self.selected_checkbox.get()])
+        self.env.set_answer(self.question_string + "\" \"" + self.answers_list[self.selected_checkbox.get()])
         self.load_expert_system_data()
-
+        
+        
     def finish(self, result):
         self.next_button.configure(
             text="Exit", command=self.close_button_callback)
